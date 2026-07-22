@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <rect x="6" y="6" width="116" height="116" rx="24" fill="#512BD4"/>
+  <g fill="#ffffff" font-family="'Cascadia Code','JetBrains Mono',monospace" font-weight="700">
+    <text x="64" y="86" font-size="72" text-anchor="middle">#</text>
+  </g>
+  <rect x="26" y="98" width="76" height="8" rx="4" fill="#00C8B4"/>
+</svg>
