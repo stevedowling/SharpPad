@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SharpPad.App.MainWindow"
+        Title="SharpPad" Width="1280" Height="850"
+        WindowStartupLocation="CenterScreen">
+
+  <DockPanel>
+
+    <!-- toolbar -->
+    <Border DockPanel.Dock="Top" Background="#252526" Padding="8,6">
+      <DockPanel>
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Button Name="RunButton" Content="▶ Run (F5)" Background="#0E639C" Foreground="White"/>
+          <Button Name="StopButton" Content="■ Stop" IsEnabled="False"/>
+          <Separator Width="12" Background="Transparent"/>
+          <Button Name="NewButton" Content="New"/>
+          <Button Name="SaveButton" Content="Save (Ctrl+S)"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+          <TextBlock Text="Connection:" VerticalAlignment="Center" Foreground="#AAAAAA"/>
+          <ComboBox Name="ConnectionCombo" MinWidth="160" VerticalAlignment="Center"/>
+          <Button Name="ManageConnectionsButton" Content="Manage…"/>
+        </StackPanel>
+        <TextBlock Name="ScriptNameText" Text="untitled" VerticalAlignment="Center"
+                   HorizontalAlignment="Center" Foreground="#CCCCCC" FontStyle="Italic"/>
+      </DockPanel>
+    </Border>
+
+    <!-- status bar -->
+    <Border DockPanel.Dock="Bottom" Background="#252526" Padding="8,3">
+      <TextBlock Name="StatusText" Text="Ready" Foreground="#AAAAAA" FontSize="12"/>
+    </Border>
+
+    <Grid ColumnDefinitions="230,4,*">
+
+      <!-- saved scripts -->
+      <Border Grid.Column="0" Background="#1E1E1E">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="MY SCRIPTS" Margin="10,8" FontSize="11"
+                     Foreground="#808080" FontWeight="Bold"/>
+          <ListBox Name="ScriptsList" Background="Transparent"/>
+        </DockPanel>
+      </Border>
+
+      <GridSplitter Grid.Column="1" Background="#333337" ResizeDirection="Columns"/>
+
+      <Grid Grid.Column="2" RowDefinitions="*,4,300">
+        <Border Grid.Row="0" Name="EditorHost" Background="#1E1E1E"/>
+        <GridSplitter Grid.Row="1" Background="#333337" ResizeDirection="Rows"/>
+        <Border Grid.Row="2" Background="#1B1B1C">
+          <ScrollViewer Name="ResultsScroll">
+            <StackPanel Name="ResultsPanel" Margin="10" Spacing="8"/>
+          </ScrollViewer>
+        </Border>
+      </Grid>
+    </Grid>
+
+  </DockPanel>
+</Window>

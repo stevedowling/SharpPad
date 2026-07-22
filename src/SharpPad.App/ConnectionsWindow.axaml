@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SharpPad.App.ConnectionsWindow"
+        Title="Database Connections" Width="640" Height="440"
+        WindowStartupLocation="CenterOwner">
+
+  <Grid ColumnDefinitions="220,*" Margin="12">
+
+    <DockPanel Grid.Column="0">
+      <Button DockPanel.Dock="Bottom" Name="DeleteButton" Content="Delete" Margin="0,8,8,0"
+              HorizontalAlignment="Stretch"/>
+      <ListBox Name="ConnectionsList" Margin="0,0,8,0"/>
+    </DockPanel>
+
+    <StackPanel Grid.Column="1" Spacing="8">
+      <TextBlock Text="Name"/>
+      <TextBox Name="NameBox" Watermark="mydb"/>
+      <TextBlock Text="Provider"/>
+      <ComboBox Name="ProviderCombo" HorizontalAlignment="Stretch">
+        <ComboBoxItem Content="sqlite"/>
+        <ComboBoxItem Content="postgres"/>
+        <ComboBoxItem Content="sqlserver"/>
+        <ComboBoxItem Content="mysql"/>
+      </ComboBox>
+      <TextBlock Text="Connection string"/>
+      <TextBox Name="ConnStringBox" Watermark="Data Source=/home/you/data.db" AcceptsReturn="False"/>
+      <TextBlock Foreground="#808080" FontSize="12" TextWrapping="Wrap"
+                 Text="Scripts use a connection via the toolbar dropdown or a #connection &quot;name&quot; directive, then call Connection / Query(sql) / Query&lt;T&gt;(sql) / Execute(sql)."/>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Name="SaveConnButton" Content="Add / Update"/>
+        <Button Name="CloseButton" Content="Close"/>
+      </StackPanel>
+    </StackPanel>
+  </Grid>
+</Window>
