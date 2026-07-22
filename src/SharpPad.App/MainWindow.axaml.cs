@@ -58,6 +58,7 @@ public partial class MainWindow : Window
         StopButton.Click += (_, _) => _cts?.Cancel();
         NewButton.Click += (_, _) => NewScript();
         SaveButton.Click += (_, _) => _ = SaveAsync();
+        SaveAsButton.Click += (_, _) => _ = SaveAsAsync();
         ManageConnectionsButton.Click += (_, _) => _ = ManageConnectionsAsync();
         ScriptsList.SelectionChanged += (_, _) => LoadSelectedScript();
 
@@ -218,23 +219,37 @@ public partial class MainWindow : Window
 
     private async Task SaveAsync()
     {
-        if (_currentPath is null)
-        {
-            var start = await StorageProvider.TryGetFolderFromPathAsync(Workspace.ScriptsDir);
-            var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
-            {
-                Title = "Save script",
-                SuggestedStartLocation = start,
-                DefaultExtension = "cs",
-                FileTypeChoices = [new FilePickerFileType("C# script") { Patterns = ["*.cs"] }]
-            });
-            if (file is null) return;
-            _currentPath = file.Path.LocalPath;
-        }
-        await File.WriteAllTextAsync(_currentPath, _editor.Text ?? "");
+        if (_currentPath is null && !await TrySelectSavePathAsync())
+            return;
+
+        await File.WriteAllTextAsync(_currentPath!, _editor.Text ?? "");
         ScriptNameText.Text = Path.GetFileName(_currentPath);
         StatusText.Text = $"Saved {Path.GetFileName(_currentPath)}";
         RefreshScriptsList();
+    }
+
+    private async Task SaveAsAsync()
+    {
+        if (!await TrySelectSavePathAsync())
+            return;
+
+        await SaveAsync();
+    }
+
+    private async Task<bool> TrySelectSavePathAsync()
+    {
+        var start = await StorageProvider.TryGetFolderFromPathAsync(Workspace.ScriptsDir);
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save script",
+            SuggestedStartLocation = start,
+            DefaultExtension = "cs",
+            FileTypeChoices = [new FilePickerFileType("C# script") { Patterns = ["*.cs"] }]
+        });
+        if (file is null) return false;
+
+        _currentPath = file.Path.LocalPath;
+        return true;
     }
 
     private void RefreshScriptsList()

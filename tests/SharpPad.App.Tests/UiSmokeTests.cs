@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using SharpPad.App;
@@ -24,6 +25,7 @@ public class UiSmokeTests
         var window = new MainWindow();
         window.Show();
         Assert.True(window.IsVisible);
+        Assert.NotNull(window.FindControl<Button>("SaveAsButton"));
         window.Close();
     }
 

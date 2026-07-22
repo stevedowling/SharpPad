@@ -15,6 +15,7 @@
           <Separator Width="12" Background="Transparent"/>
           <Button Name="NewButton" Content="New"/>
           <Button Name="SaveButton" Content="Save (Ctrl+S)"/>
+          <Button Name="SaveAsButton" Content="Save As"/>
         </StackPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
           <TextBlock Text="Connection:" VerticalAlignment="Center" Foreground="#AAAAAA"/>
