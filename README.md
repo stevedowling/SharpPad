@@ -2,15 +2,31 @@
 
 A LINQPad-style C# scratchpad for Linux. Avalonia desktop app: write C# in the editor, hit F5, get LINQPad-style rich `Dump()` output.
 
+## Install
+
+One-liner (detects your distro and CPU, then installs the matching package):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/stevedowling/SharpPad/main/install.sh | bash
+```
+
+The installer picks a `.deb` on Debian/Ubuntu, an `.rpm` on Fedora/RHEL/openSUSE, and a portable `.tar.gz` on Arch and everything else. Overrides: `SHARPPAD_VERSION=1.2.0` for a specific release, `SHARPPAD_METHOD=tarball` to force a method. Remove with `install.sh --uninstall`.
+
+Prebuilt packages for each release (x64 and arm64) are on the [Releases page](https://github.com/stevedowling/SharpPad/releases). The app bundle is self-contained, but **compiling scripts still needs the .NET 10 SDK** installed (`dotnet-sdk-10.0`); the installer warns if it's missing.
+
 ## Requirements
 
 .NET 10 SDK on the machine (the SDK, not just the runtime — scripts are compiled with `dotnet build`).
 
-## Run
+## Run from source
 
 ```bash
 dotnet run --project src/SharpPad.App
 ```
+
+## Building release packages
+
+`packaging/build-linux-packages.sh <rid> <version>` produces a `.deb`, `.rpm`, and `.tar.gz` for one runtime (`linux-x64` or `linux-arm64`) into `dist/`. Needs the .NET 10 SDK, plus `fpm` and `rpm`/`rpmbuild` for the deb/rpm targets. The `release` GitHub Actions workflow runs this for both architectures and publishes the artifacts to a GitHub Release when you push a `v*.*.*` tag.
 
 ## Usage
 
