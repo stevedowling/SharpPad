@@ -25,8 +25,22 @@ public class DirectiveParsingTests
         // directive lines blanked, not removed: user code stays on line 5
         var lines = doc.CodeForCompilation.Split('\n');
         Assert.Equal(5, lines.Length);
-        Assert.Equal("", lines[0]);
+        Assert.Equal(new string(' ', "#r \"nuget: Newtonsoft.Json, 13.0.3\"".Length), lines[0]);
         Assert.Equal("var x = 1;", lines[4]);
+    }
+
+    [Fact]
+    public void Directive_lines_preserve_character_offsets_for_editor_services()
+    {
+        const string script =
+            "#r \"nuget: Humanizer.Core, 2.14.1\"\n" +
+            "var value = Humanizer.InflectorExtensions.Humanize(\"PascalCaseInput\");\n";
+
+        var doc = ScriptDocument.Parse(script);
+
+        Assert.Equal(script.Length, doc.CodeForCompilation.Length);
+        Assert.Equal(script.IndexOf("var value", StringComparison.Ordinal),
+            doc.CodeForCompilation.IndexOf("var value", StringComparison.Ordinal));
     }
 }
 

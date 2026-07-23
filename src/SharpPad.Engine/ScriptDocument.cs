@@ -46,7 +46,7 @@ public sealed class ScriptDocument
             {
                 nugets.Add(new NugetRef(m.Groups["pkg"].Value,
                     m.Groups["ver"].Success ? m.Groups["ver"].Value : null));
-                lines[i] = "";
+                lines[i] = new string(' ', line.Length);
             }
             else if ((m = DllRx.Match(line)).Success)
             {
@@ -54,12 +54,12 @@ public sealed class ScriptDocument
                 if (path.StartsWith("~/"))
                     path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), path[2..]);
                 dlls.Add(path);
-                lines[i] = "";
+                lines[i] = new string(' ', line.Length);
             }
             else if ((m = ConnRx.Match(line)).Success)
             {
                 connection = m.Groups["name"].Value;
-                lines[i] = "";
+                lines[i] = new string(' ', line.Length);
             }
         }
 
