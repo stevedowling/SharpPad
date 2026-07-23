@@ -3,6 +3,9 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using AvaloniaEdit;
+using AvaloniaEdit.CodeCompletion;
+using AvaloniaEdit.Document;
+using AvaloniaEdit.Editing;
 using AvaloniaEdit.TextMate;
 using SharpPad.Engine;
 using TextMateSharp.Grammars;
@@ -13,7 +16,10 @@ public partial class MainWindow : Window
 {
     private readonly TextEditor _editor;
     private readonly Executor _executor = new();
+    private readonly ScriptCompletionService _completionService = new();
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _completionCts;
+    private CompletionWindow? _completionWindow;
     private string? _currentPath;
     private List<DbConnectionInfo> _connections = [];
 
@@ -53,6 +59,11 @@ public partial class MainWindow : Window
             registryOptions.GetLanguageByExtension(".cs").Id));
 
         _editor.Text = SampleScript;
+        _editor.TextArea.TextEntered += (_, e) =>
+        {
+            if (e.Text == ".")
+                _ = ShowCompletionsAsync(ScriptCompletionTriggerKind.TypeChar, '.');
+        };
 
         RunButton.Click += (_, _) => _ = RunAsync();
         StopButton.Click += (_, _) => _cts?.Cancel();
@@ -66,6 +77,17 @@ public partial class MainWindow : Window
         {
             if (e.Key == Key.F5) { e.Handled = true; _ = RunAsync(); }
             else if (e.Key == Key.S && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { e.Handled = true; _ = SaveAsync(); }
+            else if (e.Key == Key.Space && e.KeyModifiers.HasFlag(KeyModifiers.Control))
+            {
+                e.Handled = true;
+                _ = ShowCompletionsAsync(ScriptCompletionTriggerKind.Invoke);
+            }
+        };
+
+        Closed += async (_, _) =>
+        {
+            _completionCts?.Cancel();
+            await _completionService.DisposeAsync();
         };
 
         RefreshScriptsList();
@@ -80,19 +102,11 @@ public partial class MainWindow : Window
 
         var doc = ScriptDocument.Parse(_editor.Text ?? "");
 
-        DbConnectionInfo? conn = null;
-        if (doc.ConnectionName is not null)
+        var conn = ResolveActiveConnection(doc);
+        if (doc.ConnectionName is not null && conn is null)
         {
-            conn = _connections.FirstOrDefault(c => c.Name == doc.ConnectionName);
-            if (conn is null)
-            {
-                StatusText.Text = $"Unknown connection '{doc.ConnectionName}' — define it via Manage…";
-                return;
-            }
-        }
-        else if (ConnectionCombo.SelectedIndex > 0)
-        {
-            conn = _connections[ConnectionCombo.SelectedIndex - 1];
+            StatusText.Text = $"Unknown connection '{doc.ConnectionName}' — define it via Manage…";
+            return;
         }
 
         ResultsPanel.Children.Clear();
@@ -207,10 +221,67 @@ public partial class MainWindow : Window
         });
     }
 
+    private async Task ShowCompletionsAsync(ScriptCompletionTriggerKind triggerKind, char? triggerCharacter = null)
+    {
+        _completionCts?.Cancel();
+        _completionCts?.Dispose();
+        _completionCts = new CancellationTokenSource();
+        var ct = _completionCts.Token;
+
+        try
+        {
+            var text = _editor.Text ?? "";
+            var doc = ScriptDocument.Parse(text);
+            var conn = ResolveActiveConnection(doc);
+            if (doc.ConnectionName is not null && conn is null)
+                return;
+
+            var completionSet = await _completionService.GetCompletionsAsync(
+                text,
+                _currentPath ?? "untitled",
+                Path.Combine(AppContext.BaseDirectory, "SharpPad.Runtime.dll"),
+                conn,
+                _editor.CaretOffset,
+                triggerKind,
+                triggerCharacter,
+                ct);
+
+            if (ct.IsCancellationRequested || completionSet is null || completionSet.Items.Length == 0)
+                return;
+
+            _completionWindow?.Close();
+            var window = new CompletionWindow(_editor.TextArea)
+            {
+                StartOffset = completionSet.StartOffset,
+                EndOffset = completionSet.EndOffset,
+                CloseWhenCaretAtBeginning = true
+            };
+            window.Closed += (_, _) =>
+            {
+                if (ReferenceEquals(_completionWindow, window))
+                    _completionWindow = null;
+            };
+
+            foreach (var item in completionSet.Items)
+                window.CompletionList.CompletionData.Add(new RoslynCompletionData(_completionService, completionSet, item));
+
+            _completionWindow = window;
+            window.Show();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "IntelliSense unavailable: " + ex.Message;
+        }
+    }
+
     // ---------- scripts ----------
 
     private void NewScript()
     {
+        _completionWindow?.Close();
         _currentPath = null;
         _editor.Text = SampleScript;
         ScriptNameText.Text = "untitled";
@@ -274,6 +345,7 @@ public partial class MainWindow : Window
             return;
         try
         {
+            _completionWindow?.Close();
             _editor.Text = File.ReadAllText(path);
             _currentPath = path;
             ScriptNameText.Text = Path.GetFileName(path);
@@ -302,5 +374,37 @@ public partial class MainWindow : Window
     {
         await new ConnectionsWindow().ShowDialog(this);
         RefreshConnections();
+    }
+
+    private DbConnectionInfo? ResolveActiveConnection(ScriptDocument doc)
+    {
+        if (doc.ConnectionName is not null)
+            return _connections.FirstOrDefault(c => c.Name == doc.ConnectionName);
+
+        return ConnectionCombo.SelectedIndex > 0
+            ? _connections[ConnectionCombo.SelectedIndex - 1]
+            : null;
+    }
+
+    private sealed class RoslynCompletionData(
+        ScriptCompletionService completionService,
+        ScriptCompletionSet completionSet,
+        ScriptCompletionItem item) : ICompletionData
+    {
+        public string Text => item.Text;
+        public object Content => item.Text;
+        public object? Description => null;
+        public double Priority => 0;
+        public Avalonia.Media.IImage? Image => null;
+
+        public void Complete(TextArea textArea, ISegment completionSegment, EventArgs insertionRequestEventArgs)
+        {
+            var change = completionService.GetChangeAsync(completionSet, item).GetAwaiter().GetResult();
+            foreach (var textChange in change.TextChanges.OrderByDescending(c => c.Span.Start))
+                textArea.Document.Replace(textChange.Span.Start, textChange.Span.Length, textChange.NewText);
+
+            if (change.NewPosition is int newPosition)
+                textArea.Caret.Offset = newPosition;
+        }
     }
 }
