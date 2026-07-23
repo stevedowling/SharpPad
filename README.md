@@ -59,7 +59,11 @@ dotnet test          # engine end-to-end (real builds/processes) + headless UI s
 
 ## Known limitations / v2 seams
 
-- No IntelliSense — syntax highlighting only (TextMate). Seam: RoslynPad's editor packages, or a Roslyn completion service over the generated project.
+- No IntelliSense yet — syntax highlighting only (TextMate). Researched direction for issue #2: keep AvaloniaEdit/TextMate, add Roslyn completion over SharpPad's generated per-script MSBuild project rather than replacing the editor or approximating references in memory. That reuses the exact NuGet/DLL/runtime/global-using environment SharpPad already builds to run scripts.
+  - Phase 1: add Roslyn/MSBuild workspace support, open the generated `script.csproj`, wire Ctrl+Space / `.` completion in `MainWindow`, and prove completions for framework APIs, `Dump()`, and `#r "nuget:..."` packages.
+  - Phase 2: keep one cancellable workspace session per open script, update `Program.cs` in memory on edits, and regenerate/reopen only when directives, connection, runtime path, or script identity change.
+  - Phase 3: add hover/quick-info, signature help, richer diagnostics, and evaluate RoslynPad/Morgania later only if deeper editor replacement becomes worthwhile.
+  - Prerequisite captured in code: directive lines are now blanked with same-width spaces so future completion spans can preserve absolute character offsets, not just line numbers.
 - No typed LINQ-to-database (LINQPad's headline feature). SQL + Dapper + LINQ over results instead. Seam: EF Core `dotnet ef dbcontext scaffold` into the generated project — the project-per-script model was chosen partly to make this drop in cleanly.
 - `Dump()` output is fully materialized up to limits (depth 5, 1000 items, then truncation markers) rather than lazily expandable across the process boundary.
 - Scripts run to completion; no `Util.Cache`, no charting, no `Dump()` refresh.
