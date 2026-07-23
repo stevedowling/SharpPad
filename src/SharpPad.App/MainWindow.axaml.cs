@@ -219,7 +219,7 @@ public partial class MainWindow : Window
 
     private async Task SaveAsync()
     {
-        if (_currentPath is null && !await TrySelectSavePathAsync())
+        if (_currentPath is null && !await TrySelectSavePathAsync("Save script"))
             return;
 
         await File.WriteAllTextAsync(_currentPath!, _editor.Text ?? "");
@@ -230,18 +230,18 @@ public partial class MainWindow : Window
 
     private async Task SaveAsAsync()
     {
-        if (!await TrySelectSavePathAsync())
+        if (!await TrySelectSavePathAsync("Save script as (rename/fork)"))
             return;
 
         await SaveAsync();
     }
 
-    private async Task<bool> TrySelectSavePathAsync()
+    private async Task<bool> TrySelectSavePathAsync(string title)
     {
         var start = await StorageProvider.TryGetFolderFromPathAsync(Workspace.ScriptsDir);
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "Save script",
+            Title = title,
             SuggestedStartLocation = start,
             DefaultExtension = "cs",
             FileTypeChoices = [new FilePickerFileType("C# script") { Patterns = ["*.cs"] }]

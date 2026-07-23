@@ -25,7 +25,9 @@ public class UiSmokeTests
         var window = new MainWindow();
         window.Show();
         Assert.True(window.IsVisible);
-        Assert.NotNull(window.FindControl<Button>("SaveAsButton"));
+        var saveAsButton = window.FindControl<Button>("SaveAsButton");
+        Assert.NotNull(saveAsButton);
+        Assert.Equal("Save As…", saveAsButton.Content);
         window.Close();
     }
 
